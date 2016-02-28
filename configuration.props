@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    
+    <PropertyGroup>
+        <!-- Basic settings -->    
+        <ReferencesFolder        Condition="'$(ReferencesFolder)'==''">$(MSBuildThisFileDirectory)references</ReferencesFolder>
+        <MSBuildFolder           Condition="'$(MSBuildFolder)'==''">$(MSBuildThisFileDirectory)Msbuild</MSBuildFolder>
+                
+        <LegalCopyright        Condition="'$(LegalCopyright)' == ''">Copyright © 2015 jmecsoftware.com</LegalCopyright>
+        <CompanyName           Condition="'$(CompanyName)' == ''">jmecsoftware.com</CompanyName>
+        
+        <!-- Version settings -->
+        <MajorVersionNumber           Condition="'$(MajorVersionNumber)'==''">1</MajorVersionNumber>
+        <MinorVersionNumber           Condition="'$(MinorVersionNumber)'==''">3</MinorVersionNumber>
+        <BuildNumber                  Condition="'$(BuildNumber)'==''">0</BuildNumber>
+        <RevisionNumber               Condition="'$(RevisionNumber)'==''">0</RevisionNumber>
+        <AssemblyPatcherTaskOn        Condition="'$(AssemblyPatcherTaskOn)'==''">false</AssemblyPatcherTaskOn>
+        <UnitTestsDisabled            Condition="'$(UnitTestsDisabled)'==''">true</UnitTestsDisabled>
+        
+        <VSVersion Condition="'$(VSVersion)'==''">$(VisualStudioVersion)</VSVersion>
+        
+        <TargetFSharpCoreVersion Condition="'$(VSVersion)'=='11.0'">4.3.1.0</TargetFSharpCoreVersion>
+        <TargetFSharpCoreVersion Condition="'$(VSVersion)'=='12.0'">4.3.1.0</TargetFSharpCoreVersion>
+        <TargetFSharpCoreVersion Condition="'$(VSVersion)'=='14.0'">4.4.0.0</TargetFSharpCoreVersion>
+        
+        <FSharpFolder Condition="'$(TargetFSharpCoreVersion)'=='4.3.1.0'">FSharp431</FSharpFolder>
+        <FSharpFolder Condition="'$(TargetFSharpCoreVersion)'=='4.3.1.0'">FSharp431</FSharpFolder>
+        <FSharpFolder Condition="'$(TargetFSharpCoreVersion)'=='4.4.0.0'">FSharp440</FSharpFolder>
+        <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+        
+        <OutFolder Condition="'$(VSVersion)'=='11.0'">vs12</OutFolder>
+        <OutFolder Condition="'$(VSVersion)'=='12.0'">vs13</OutFolder>
+        <OutFolder Condition="'$(VSVersion)'=='14.0'">vs15</OutFolder>
+
+        <PluginsOutputPath     Condition="'$(PluginsOutputPath)'==''">$(MSBuildThisFileDirectory)BuildDrop\$(OutFolder)\</PluginsOutputPath>
+        <OBJDir>$(MSBuildThisFileDirectory)ObjDrop\$(OutFolder)\$(Configuration)\$(TSPlatform)</OBJDir>
+        <IntermediateOutputPath>$(OBJDir)$(MSBuildProjectName)\</IntermediateOutputPath>		
+    </PropertyGroup>    
+</Project>

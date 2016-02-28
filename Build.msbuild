@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
+    <Import Project="$(MSBuildThisFileDirectory)configuration.props" />
+    <ItemGroup>
+        <Plugins Include="MsbuildAutomationHelper.sln" />        
+    </ItemGroup>
+
+    <PropertyGroup>
+        <!-- Basic settings -->
+        <SkipCopy Condition="'$(SkipCopy)'==''">Yes</SkipCopy>
+    </PropertyGroup>  
+    
+    <Target Name="BuildPlugins">
+        <MSBuild Projects="@(Plugins)" Properties="Configuration=Debug" BuildInParallel="true" StopOnFirstFailure="true" />
+    </Target>
+    
+    <Target Name="Build" DependsOnTargets="BuildPlugins">
+    </Target>
+    
+</Project>
