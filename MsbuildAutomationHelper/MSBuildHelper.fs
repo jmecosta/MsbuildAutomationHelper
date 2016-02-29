@@ -132,9 +132,11 @@ let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, incl
                 if not(dir.Contains(packagesBase)) then
                     if not(additionalIncludeDirectories.Contains(path)) then
                         additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)                                                                                                 
-                    if not(project.DependentDirectories.Contains(path)) then
-                        project.DependentDirectories.Add(path) |> ignore
+                    if not(project.AdditionalIncludeDirectories.Contains(path)) then
+                        project.AdditionalIncludeDirectories.Add(path) |> ignore
         | _ -> ()
+
+
 
 
 let PopulateHeaders(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, projectPath : string) = 
@@ -159,6 +161,96 @@ let PopulateHeaders(additionalIncludeDirectories : byref<Set<string>>, includes 
                 if not(additionalIncludeDirectories.Contains(path)) then
                     additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)                                                                                                 
         | _ -> ()
+
+// gets a solution type and populates all include headers and defines
+let CreateSolutionBuildData(solution : ProjectTypes.Solution) = 
+
+    for project in solution.Projects do
+        
+        let mutable additionalIncludeDirectories : Set<string> = Set.empty
+        let mutable includes : Set<string> = Set.empty
+
+        let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path);
+
+        for item in msbuildproject.AllEvaluatedProperties do
+            System.Diagnostics.Debug.WriteLine(item.Name + " = " + item.EvaluatedValue)
+
+            if item.Name.Equals("CommonProgramFiles") then
+                if not(item.EvaluatedValue.Contains("x86")) then
+                    project.Value.ProgramFiles <- @"C:\Program Files\" 
+
+            if item.Name.Equals("PlatformToolset") then
+                project.Value.PlatformToolset <- item.EvaluatedValue.ToUpper()
+
+            if item.Name.Equals("Platform") then
+                project.Value.Platform <- item.EvaluatedValue
+
+            if item.Name.Equals("INCLUDE") then
+                let includeDirs = item.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
+                for path in includeDirs do                        
+                    if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
+                        project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
+
+        if project.Value.PlatformToolset.Equals("V110") then
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE") |> ignore
+
+        if project.Value.PlatformToolset.Equals("V120") then
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE") |> ignore
+
+        if project.Value.PlatformToolset.Equals("V140") then
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE") |> ignore
+
+
+
+        for item in msbuildproject.Items do
+            if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
+                let path = 
+                    if Path.IsPathRooted(item.EvaluatedInclude) then
+                        item.EvaluatedInclude
+                    else
+                        Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedInclude)
+
+                for fileinclude in GetIncludePathsForFile(path) do
+                        if not(includes.Contains(fileinclude)) then
+                            includes <- includes.Add(fileinclude)                
+
+                let metadataelems = Seq.toList item.Metadata 
+
+                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
+                | Some value -> 
+
+                    let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+                    for path in includeDirs do                        
+                        if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
+                            project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
+                | _ -> ()        
+
+                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions")) with
+                | Some value -> 
+
+                    let defines = value.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
+                    for define in defines do                        
+                        if not(project.Value.Defines.Contains(define)) then
+                            project.Value.Defines.Add(define) |> ignore
+                | _ -> ()
+
+                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions")) with
+                | Some value -> 
+
+                    let options = value.EvaluatedValue.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
+                    for option in options do                        
+                        if not(project.Value.AdditionalOptions.Contains(option)) then
+                            project.Value.AdditionalOptions.Add(option) |> ignore
+                | _ -> ()
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then
@@ -316,7 +408,7 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
         for solution in solutionList do
             if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solution.Name) then
                 for project in solution.Projects do
-                    for directory in project.Value.DependentDirectories do
+                    for directory in project.Value.AdditionalIncludeDirectories do
                         let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
                         if not(ignoreSet.Contains(directoryAbs)) then
@@ -358,7 +450,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
 
                     for project in solution.Value.Projects do
                 
-                        for directory in project.Value.DependentDirectories do
+                        for directory in project.Value.AdditionalIncludeDirectories do
 
                             let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
