@@ -170,11 +170,18 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
         let mutable additionalIncludeDirectories : Set<string> = Set.empty
         let mutable includes : Set<string> = Set.empty
 
-        let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path);
+        let msbuildproject =
+            let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
+    
+            if projects.Count <> 0 then
+                let data = projects.GetEnumerator();
+                data.MoveNext() |> ignore
+                data.Current
+            else
+                 new Microsoft.Build.Evaluation.Project(project.Value.Path)
 
+        let mutable ucrtVersion = "10.0.10586.0"
         for item in msbuildproject.AllEvaluatedProperties do
-            System.Diagnostics.Debug.WriteLine(item.Name + " = " + item.EvaluatedValue)
-
             if item.Name.Equals("CommonProgramFiles") then
                 if not(item.EvaluatedValue.Contains("x86")) then
                     project.Value.ProgramFiles <- @"C:\Program Files\" 
@@ -184,6 +191,9 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
 
             if item.Name.Equals("Platform") then
                 project.Value.Platform <- item.EvaluatedValue
+
+            if item.Name.Equals("UCRTVersion") then
+                ucrtVersion <- item.EvaluatedValue
 
             if item.Name.Equals("INCLUDE") then
                 let includeDirs = item.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
@@ -196,20 +206,39 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE") |> ignore
             if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE")) then
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt") |> ignore
+
 
         if project.Value.PlatformToolset.Equals("V120") then
             if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE")) then
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE") |> ignore
             if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE")) then
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt") |> ignore
 
         if project.Value.PlatformToolset.Equals("V140") then
             if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE")) then
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE") |> ignore
             if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE")) then
                 project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE") |> ignore
-
-
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\winrt")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion+ "\winrt") |> ignore
+            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt")) then
+                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt") |> ignore
 
         for item in msbuildproject.Items do
             if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
