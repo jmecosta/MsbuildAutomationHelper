@@ -169,11 +169,13 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
         
         let mutable additionalIncludeDirectories : Set<string> = Set.empty
         let mutable includes : Set<string> = Set.empty
+        let mutable alreadyLoaded = false
 
         let msbuildproject =
             let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
     
             if projects.Count <> 0 then
+                alreadyLoaded <- true
                 let data = projects.GetEnumerator();
                 data.MoveNext() |> ignore
                 data.Current
@@ -280,6 +282,9 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
                         if not(project.Value.AdditionalOptions.Contains(option)) then
                             project.Value.AdditionalOptions.Add(option) |> ignore
                 | _ -> ()
+
+        if not(alreadyLoaded) then
+            ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then
