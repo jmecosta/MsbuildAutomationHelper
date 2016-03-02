@@ -250,10 +250,6 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
                     else
                         Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedInclude)
 
-                for fileinclude in GetIncludePathsForFile(path) do
-                        if not(includes.Contains(fileinclude)) then
-                            includes <- includes.Add(fileinclude)                
-
                 let metadataelems = Seq.toList item.Metadata 
 
                 match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
