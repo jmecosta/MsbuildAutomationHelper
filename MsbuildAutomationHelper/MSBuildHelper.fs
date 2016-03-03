@@ -258,7 +258,11 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
                     let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
                     for path in includeDirs do                        
                         if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
-                            project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
+                            if Path.IsPathRooted(path) then
+                                project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
+                            else
+                                let absolutePath = Path.GetFullPath(Path.Combine(Directory.GetParent(project.Value.Path).ToString(), path))
+                                project.Value.AdditionalIncludeDirectories.Add(absolutePath) |> ignore
                 | _ -> ()        
 
                 match metadataelems |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions")) with
