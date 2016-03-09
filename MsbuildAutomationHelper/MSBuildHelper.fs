@@ -167,124 +167,156 @@ let CreateSolutionBuildData(solution : ProjectTypes.Solution) =
 
     for project in solution.Projects do
         
-        let mutable additionalIncludeDirectories : Set<string> = Set.empty
-        let mutable includes : Set<string> = Set.empty
-        let mutable alreadyLoaded = false
+        if File.Exists(project.Value.Path) then
+            let mutable additionalIncludeDirectories : Set<string> = Set.empty
+            let mutable includes : Set<string> = Set.empty
+            let mutable alreadyLoaded = false
+            let mutable outtype = ""
+            let mutable output = ""
+            let mutable assmblyName = ""
 
-        let msbuildproject =
-            let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
+            let msbuildproject =
+                let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
     
-            if projects.Count <> 0 then
-                alreadyLoaded <- true
-                let data = projects.GetEnumerator();
-                data.MoveNext() |> ignore
-                data.Current
-            else
-                 new Microsoft.Build.Evaluation.Project(project.Value.Path)
+                if projects.Count <> 0 then
+                    alreadyLoaded <- true
+                    let data = projects.GetEnumerator();
+                    data.MoveNext() |> ignore
+                    data.Current
+                else                
+                     new Microsoft.Build.Evaluation.Project(project.Value.Path)
 
-        let mutable ucrtVersion = "10.0.10586.0"
-        for item in msbuildproject.AllEvaluatedProperties do
-            if item.Name.Equals("CommonProgramFiles") then
-                if not(item.EvaluatedValue.Contains("x86")) then
-                    project.Value.ProgramFiles <- @"C:\Program Files\" 
-
-            if item.Name.Equals("PlatformToolset") then
-                project.Value.PlatformToolset <- item.EvaluatedValue.ToUpper()
-
-            if item.Name.Equals("Platform") then
-                project.Value.Platform <- item.EvaluatedValue
-
-            if item.Name.Equals("UCRTVersion") then
-                ucrtVersion <- item.EvaluatedValue
-
-            if item.Name.Equals("INCLUDE") then
-                let includeDirs = item.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
-                for path in includeDirs do                        
-                    if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
-                        project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
-
-        if project.Value.PlatformToolset.Equals("V110") then
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt") |> ignore
-
-
-        if project.Value.PlatformToolset.Equals("V120") then
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt") |> ignore
-
-        if project.Value.PlatformToolset.Equals("V140") then
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\winrt")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion+ "\winrt") |> ignore
-            if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt")) then
-                project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt") |> ignore
-
-        for item in msbuildproject.Items do
-            if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
-                let path = 
-                    if Path.IsPathRooted(item.EvaluatedInclude) then
-                        item.EvaluatedInclude
+        
+            let mutable ucrtVersion = "10.0.10586.0"
+            for item in msbuildproject.AllEvaluatedProperties do
+                if item.Name.Equals("OutputPath") then
+                    if Path.IsPathRooted(item.EvaluatedValue) then
+                        output <- item.EvaluatedValue
                     else
-                        Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedInclude)
+                        output <- Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedValue))
+                    
+                if item.Name.Equals("AssemblyName") then
+                    assmblyName <- item.EvaluatedValue
 
-                let metadataelems = Seq.toList item.Metadata 
+                if item.Name.Equals("OutputType") then
+                    outtype <- item.EvaluatedValue                    
+                
+                if item.Name.Equals("CommonProgramFiles") then
+                    if not(item.EvaluatedValue.Contains("x86")) then
+                        project.Value.ProgramFiles <- @"C:\Program Files\" 
 
-                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
-                | Some value -> 
+                if item.Name.Equals("PlatformToolset") then
+                    project.Value.PlatformToolset <- item.EvaluatedValue.ToUpper()
 
-                    let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+                if item.Name.Equals("Platform") then
+                    project.Value.Platform <- item.EvaluatedValue
+
+                if item.Name.Equals("UCRTVersion") then
+                    ucrtVersion <- item.EvaluatedValue
+
+                if item.Name.Equals("INCLUDE") then
+                    let includeDirs = item.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
                     for path in includeDirs do                        
                         if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
-                            if Path.IsPathRooted(path) then
-                                project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
-                            else
-                                let absolutePath = Path.GetFullPath(Path.Combine(Directory.GetParent(project.Value.Path).ToString(), path))
-                                project.Value.AdditionalIncludeDirectories.Add(absolutePath) |> ignore
-                | _ -> ()        
+                            project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
 
-                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions")) with
-                | Some value -> 
+            if outtype.Equals("Library") then
+                project.Value.OutputPath <- Path.Combine(output, assmblyName + ".dll")
 
-                    let defines = value.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
-                    for define in defines do                        
-                        if not(project.Value.Defines.Contains(define)) then
-                            project.Value.Defines.Add(define) |> ignore
-                | _ -> ()
+            if outtype.Equals("Application") then
+                project.Value.OutputPath <- Path.Combine(output, assmblyName + ".exe")
 
-                match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions")) with
-                | Some value -> 
+            if project.Value.PlatformToolset.Equals("V110") then
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 11.0\VC\ATLMFC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\shared") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\um") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.0\include\winrt") |> ignore
 
-                    let options = value.EvaluatedValue.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
-                    for option in options do                        
-                        if not(project.Value.AdditionalOptions.Contains(option)) then
-                            project.Value.AdditionalOptions.Add(option) |> ignore
-                | _ -> ()
 
-        if not(alreadyLoaded) then
-            ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
+            if project.Value.PlatformToolset.Equals("V120") then
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 12.0\VC\ATLMFC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\shared") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\um") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\8.1\include\winrt") |> ignore
+
+            if project.Value.PlatformToolset.Equals("V140") then
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\shared") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\um") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\winrt")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion+ "\winrt") |> ignore
+                if not(project.Value.AdditionalIncludeDirectories.Contains(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt")) then
+                    project.Value.AdditionalIncludeDirectories.Add(project.Value.ProgramFiles + @"\Windows Kits\10\include\" + ucrtVersion + "\ucrt") |> ignore
+
+            for item in msbuildproject.Items do
+                if item.ItemType.Equals("Compile") then
+                    let path = 
+                        if Path.IsPathRooted(item.EvaluatedInclude) then
+                            item.EvaluatedInclude
+                        else
+                            Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedInclude)
+
+                    project.Value.CompilationUnits.Add(path) |> ignore
+
+                if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
+                    let path = 
+                        if Path.IsPathRooted(item.EvaluatedInclude) then
+                            item.EvaluatedInclude
+                        else
+                            Path.Combine(Path.GetDirectoryName(project.Value.Path), item.EvaluatedInclude)
+
+                    let metadataelems = Seq.toList item.Metadata 
+
+                    match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
+                    | Some value -> 
+
+                        let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+                        for path in includeDirs do                        
+                            if not(project.Value.AdditionalIncludeDirectories.Contains(path)) then
+                                if Path.IsPathRooted(path) then
+                                    project.Value.AdditionalIncludeDirectories.Add(path) |> ignore
+                                else
+                                    let absolutePath = Path.GetFullPath(Path.Combine(Directory.GetParent(project.Value.Path).ToString(), path))
+                                    project.Value.AdditionalIncludeDirectories.Add(absolutePath) |> ignore
+                    | _ -> ()        
+
+                    match metadataelems |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions")) with
+                    | Some value -> 
+
+                        let defines = value.EvaluatedValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
+                        for define in defines do                        
+                            if not(project.Value.Defines.Contains(define)) then
+                                project.Value.Defines.Add(define) |> ignore
+                    | _ -> ()
+
+                    match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions")) with
+                    | Some value -> 
+
+                        let options = value.EvaluatedValue.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
+                        for option in options do                        
+                            if not(project.Value.AdditionalOptions.Contains(option)) then
+                                project.Value.AdditionalOptions.Add(option) |> ignore
+                    | _ -> ()
+
+            if not(alreadyLoaded) then
+                ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then

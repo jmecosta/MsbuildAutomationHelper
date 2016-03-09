@@ -31,10 +31,12 @@ type Project() =
     member val AdditionalOptions : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set    
     member val AssemblyReferences : System.Collections.Generic.Dictionary<Guid, AssemblyRef>  = new System.Collections.Generic.Dictionary<Guid, AssemblyRef>() with get, set
     member val NugetReferences : Set<string> = Set.empty with get, set
+    member val CompilationUnits : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
     member val Visible : bool = false with get, set
     member val PlatformToolset : string = "V120" with get, set
     member val Platform : string = "Win32" with get, set
     member val ProgramFiles : string = @"C:\Program Files (x86)" with get, set
+    member val OutputPath : string = "" with get, set
 
 type DirectoryRef() = 
     member val Path : string =  "" with get, set
